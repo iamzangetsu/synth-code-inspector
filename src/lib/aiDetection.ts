@@ -294,6 +294,79 @@ function analyzeLine(line: string, lineNumber: number, language: string): LineAn
   };
 }
 
+function isCreativeHumanCode(line: string): boolean {
+  const content = line.trim();
+  
+  // Check for clear human creativity indicators
+  const creativePatterns = [
+    /(TODO|FIXME|HACK|XXX|NOTE):/gi,
+    /\b(foo|bar|baz|qux|quirky|magic|hack|wtf|temp|tmp)\b/i,
+    /console\.log\((?!.*Result:|.*Error:|.*Usage:)/,
+    /\/\/\s*(FIXME|TODO|HACK|NOTE)/i,
+    /\/\/\s*[a-z][^.A-Z]*$/,  // Short, casual comments without proper capitalization
+    /\?\?\?|\!\!\!|\.\.\.$/,  // Casual punctuation
+    /\/\/\s*(lol|wtf|omg|meh|ugh)/i  // Casual expressions
+  ];
+  
+  return creativePatterns.some(pattern => pattern.test(content));
+}
+
+function applyContextualAnalysis(lineAnalysis: LineAnalysis[]): void {
+  // Apply sandwiching rule: if a line is between AI lines, mark it as AI unless it's clearly creative human code
+  for (let i = 1; i < lineAnalysis.length - 1; i++) {
+    const currentLine = lineAnalysis[i];
+    const prevLine = lineAnalysis[i - 1];
+    const nextLine = lineAnalysis[i + 1];
+    
+    // Skip empty lines
+    if (!currentLine.content.trim()) continue;
+    
+    // If current line is human but surrounded by AI lines
+    if (!currentLine.isAI && prevLine.isAI && nextLine.isAI) {
+      // Check if it's genuinely creative human code
+      if (!isCreativeHumanCode(currentLine.content)) {
+        currentLine.isAI = true;
+        currentLine.confidence = Math.max(currentLine.confidence, 0.7);
+        currentLine.reasons.push("Line sandwiched between AI-generated code blocks");
+      }
+    }
+  }
+  
+  // Apply block analysis: look for consecutive AI patterns
+  let consecutiveAICount = 0;
+  for (let i = 0; i < lineAnalysis.length; i++) {
+    const line = lineAnalysis[i];
+    
+    if (!line.content.trim()) {
+      consecutiveAICount = 0;
+      continue;
+    }
+    
+    if (line.isAI) {
+      consecutiveAICount++;
+    } else {
+      // If we have a human line after many AI lines, check if it's likely part of the AI block
+      if (consecutiveAICount >= 3 && !isCreativeHumanCode(line.content)) {
+        // Look ahead to see if AI pattern continues
+        let aiContinues = false;
+        for (let j = i + 1; j < Math.min(i + 3, lineAnalysis.length); j++) {
+          if (lineAnalysis[j].content.trim() && lineAnalysis[j].isAI) {
+            aiContinues = true;
+            break;
+          }
+        }
+        
+        if (aiContinues) {
+          line.isAI = true;
+          line.confidence = Math.max(line.confidence, 0.6);
+          line.reasons.push("Part of extended AI-generated code block");
+        }
+      }
+      consecutiveAICount = 0;
+    }
+  }
+}
+
 export async function analyzeCode(code: string, language: string): Promise<AnalysisResult> {
   // Simulate processing delay for realism
   await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
@@ -317,6 +390,9 @@ export async function analyzeCode(code: string, language: string): Promise<Analy
     
     lineAnalysis.push(analysis);
   }
+  
+  // Apply contextual analysis to improve accuracy
+  applyContextualAnalysis(lineAnalysis);
   
   // Calculate statistics
   const nonEmptyLines = lineAnalysis.filter(l => l.content.trim());
