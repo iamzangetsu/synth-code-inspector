@@ -22,69 +22,111 @@ interface DetectionPattern {
   aiIndicator: boolean;
 }
 
-// AI detection patterns based on common characteristics
+// AI detection patterns based on real AI vs human coding characteristics
 const AI_PATTERNS: DetectionPattern[] = [
-  // Overly verbose comments
+  // Step-by-step comments (very common in AI code)
   {
-    pattern: /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
-    weight: 0.3,
-    reason: "Contains verbose or generic comments typical of AI generation",
+    pattern: /\/\/\s*Step\s*\d+:|\/\/\s*\d+\./gi,
+    weight: 0.8,
+    reason: "Contains step-by-step comments typical of AI explanations",
     aiIndicator: true
   },
   
-  // Generic variable names
+  // Overly descriptive comments explaining obvious code
   {
-    pattern: /\b(result|response|data|item|element|value|temp|obj|arr)\d*\b/gi,
-    weight: 0.4,
-    reason: "Uses generic variable names common in AI-generated code",
+    pattern: /\/\/\s*(Get|Parse|Check|Validate|Perform|Display|Calculate|Initialize).*$/gm,
+    weight: 0.6,
+    reason: "Contains verbose explanatory comments typical of AI generation",
     aiIndicator: true
   },
   
-  // Excessive error handling
+  // Generic error messages with examples
   {
-    pattern: /(try\s*{|catch\s*\(|finally\s*{)/g,
-    weight: 0.2,
-    reason: "Contains comprehensive error handling patterns",
+    pattern: /(Usage:|Example:|Error:).*$/gm,
+    weight: 0.7,
+    reason: "Contains structured error messages with examples",
     aiIndicator: true
   },
   
-  // Repetitive patterns
+  // Perfect input validation patterns
   {
-    pattern: /(\w+)\s*=\s*\1/g,
-    weight: 0.3,
-    reason: "Contains repetitive assignment patterns",
-    aiIndicator: true
-  },
-  
-  // TODO/FIXME comments
-  {
-    pattern: /(TODO|FIXME|NOTE|HACK):/gi,
+    pattern: /(process\.exit\(1\)|isNaN\(|\.length\s*[!=]=|args\.length)/g,
     weight: 0.5,
-    reason: "Contains TODO/FIXME comments suggesting human planning",
-    aiIndicator: false
+    reason: "Contains comprehensive input validation typical of AI",
+    aiIndicator: true
   },
   
-  // Complex regex or cryptic code
+  // Overly descriptive variable names
   {
-    pattern: /\/(?:\\.|[^\/\\\n])*\/[gimuy]*/g,
+    pattern: /\b(commandLineArguments|userInput|calculationResult|operatorSymbol)\b/gi,
+    weight: 0.6,
+    reason: "Uses overly descriptive variable names",
+    aiIndicator: true
+  },
+  
+  // Perfect switch/case structure with all cases
+  {
+    pattern: /switch\s*\([^)]+\)\s*{[\s\S]*default:\s*[\s\S]*}/g,
+    weight: 0.4,
+    reason: "Contains comprehensive switch statement with default case",
+    aiIndicator: true
+  },
+  
+  // AI-style shebang and perfect formatting
+  {
+    pattern: /^#!/,
     weight: 0.3,
-    reason: "Contains complex regex patterns",
+    reason: "Includes shebang line typical of AI-generated scripts",
+    aiIndicator: true
+  },
+  
+  // Human indicators
+  
+  // Debug console logs left in code
+  {
+    pattern: /console\.log\((?!.*Result:|.*Error:|.*Usage:)/g,
+    weight: 0.6,
+    reason: "Contains debug console.log statements",
     aiIndicator: false
   },
   
-  // Inconsistent spacing/formatting
+  // TODO/FIXME comments (humans leave these)
   {
-    pattern: /\s{3,}|\t\s+|\s+\t/g,
-    weight: 0.2,
+    pattern: /(TODO|FIXME|HACK|XXX):/gi,
+    weight: 0.7,
+    reason: "Contains TODO/FIXME comments indicating human planning",
+    aiIndicator: false
+  },
+  
+  // Terse or minimal comments
+  {
+    pattern: /\/\/\s*[a-z][^.]*$/gm,
+    weight: 0.3,
+    reason: "Contains short, terse comments typical of human code",
+    aiIndicator: false
+  },
+  
+  // Abbreviated variable names
+  {
+    pattern: /\b(btn|txt|img|nav|auth|cfg|opts|params|ctx|req|res|db|api|temp|tmp|val|str|num|arr|obj)\b/gi,
+    weight: 0.4,
+    reason: "Uses abbreviated variable names common in human code",
+    aiIndicator: false
+  },
+  
+  // Inconsistent spacing or formatting
+  {
+    pattern: /\s{3,}(?!\s*\/\/)|[;}]\s*[;}]|\t\s+|\s+\t/g,
+    weight: 0.5,
     reason: "Has inconsistent spacing typical of human editing",
     aiIndicator: false
   },
   
-  // Domain-specific abbreviations
+  // Quick and dirty solutions (missing error handling)
   {
-    pattern: /\b(btn|txt|img|nav|auth|admin|cfg|opts|params|args|ctx|req|res|db|api)\b/gi,
-    weight: 0.3,
-    reason: "Uses domain-specific abbreviations common in human code",
+    pattern: /\[[^\]]*\]\.map\(|\.filter\(|\.reduce\(/g,
+    weight: 0.2,
+    reason: "Uses functional programming without extensive validation",
     aiIndicator: false
   }
 ];
