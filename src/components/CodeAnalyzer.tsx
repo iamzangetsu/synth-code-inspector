@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Brain, User, Zap, AlertTriangle, CheckCircle } from "lucide-react";
 import { analyzeCode } from "@/lib/aiDetection";
 import type { AnalysisResult } from "@/lib/aiDetection";
@@ -182,45 +183,150 @@ export function CodeAnalyzer() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                {analysis.lineAnalysis.map((lineAnalysis, index) => (
-                  <div
-                    key={index}
-                    className={`p-3 rounded-lg border transition-all hover:bg-muted/50 ${
-                      lineAnalysis.isAI ? 'border-ai/30 bg-ai/5' : 'border-human/30 bg-human/5'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs text-muted-foreground w-8">
-                          {index + 1}
-                        </span>
-                        {getLineIndicator(lineAnalysis)}
-                        {getConfidenceBadge(lineAnalysis.confidence, lineAnalysis.isAI)}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <pre className="text-sm font-mono overflow-x-auto whitespace-pre-wrap break-all">
-                          {lineAnalysis.content}
-                        </pre>
-                        
-                        {lineAnalysis.reasons.length > 0 && (
-                          <div className="mt-2 space-y-1">
-                            {lineAnalysis.reasons.map((reason, idx) => (
-                              <div
-                                key={idx}
-                                className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded"
-                              >
-                                {reason}
-                              </div>
-                            ))}
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="all" className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    All Lines ({analysis.totalLines})
+                  </TabsTrigger>
+                  <TabsTrigger value="ai" className="flex items-center gap-2">
+                    <Brain className="w-4 h-4" />
+                    AI Only ({analysis.aiLines})
+                  </TabsTrigger>
+                  <TabsTrigger value="human" className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Human Only ({analysis.humanLines})
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="all" className="mt-4">
+                  <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                    {analysis.lineAnalysis.map((lineAnalysis, index) => (
+                      <div
+                        key={index}
+                        className={`p-3 rounded-lg border transition-all hover:bg-muted/50 ${
+                          lineAnalysis.isAI ? 'border-ai/30 bg-ai/5' : 'border-human/30 bg-human/5'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-xs text-muted-foreground w-8">
+                              {index + 1}
+                            </span>
+                            {getLineIndicator(lineAnalysis)}
+                            {getConfidenceBadge(lineAnalysis.confidence, lineAnalysis.isAI)}
                           </div>
-                        )}
+                          
+                          <div className="flex-1 min-w-0">
+                            <pre className="text-sm font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                              {lineAnalysis.content}
+                            </pre>
+                            
+                            {lineAnalysis.reasons.length > 0 && (
+                              <div className="mt-2 space-y-1">
+                                {lineAnalysis.reasons.map((reason, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded"
+                                  >
+                                    {reason}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </TabsContent>
+
+                <TabsContent value="ai" className="mt-4">
+                  <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                    {analysis.lineAnalysis.filter(line => line.isAI).map((lineAnalysis, index) => {
+                      const originalIndex = analysis.lineAnalysis.findIndex(line => line === lineAnalysis);
+                      return (
+                        <div
+                          key={originalIndex}
+                          className="p-3 rounded-lg border transition-all hover:bg-muted/50 border-ai/30 bg-ai/5"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-xs text-muted-foreground w-8">
+                                {originalIndex + 1}
+                              </span>
+                              {getLineIndicator(lineAnalysis)}
+                              {getConfidenceBadge(lineAnalysis.confidence, lineAnalysis.isAI)}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <pre className="text-sm font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                                {lineAnalysis.content}
+                              </pre>
+                              
+                              {lineAnalysis.reasons.length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                  {lineAnalysis.reasons.map((reason, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded"
+                                    >
+                                      {reason}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="human" className="mt-4">
+                  <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                    {analysis.lineAnalysis.filter(line => !line.isAI).map((lineAnalysis, index) => {
+                      const originalIndex = analysis.lineAnalysis.findIndex(line => line === lineAnalysis);
+                      return (
+                        <div
+                          key={originalIndex}
+                          className="p-3 rounded-lg border transition-all hover:bg-muted/50 border-human/30 bg-human/5"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-xs text-muted-foreground w-8">
+                                {originalIndex + 1}
+                              </span>
+                              {getLineIndicator(lineAnalysis)}
+                              {getConfidenceBadge(lineAnalysis.confidence, lineAnalysis.isAI)}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <pre className="text-sm font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                                {lineAnalysis.content}
+                              </pre>
+                              
+                              {lineAnalysis.reasons.length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                  {lineAnalysis.reasons.map((reason, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded"
+                                    >
+                                      {reason}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
